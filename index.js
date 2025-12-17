@@ -12,6 +12,7 @@ stopBy = null;
 delay = 60000;
 audioRemind = null;
 audioEnd = null;
+
 newAudio = function(file){
   var x$, node;
   x$ = node = new Audio();
@@ -21,7 +22,9 @@ newAudio = function(file){
   document.body.appendChild(node);
   return node;
 };
+
 soundToggle = function(des, state){
+  if (!des) return; // 增加檢查，防止音效為 null 時報錯
   var x$;
   if (state) {
     return des.play();
@@ -32,10 +35,12 @@ soundToggle = function(des, state){
     return x$;
   }
 };
+
 show = function(){
   isShow = !isShow;
   return $('.fbtn').css('opacity', isShow ? '1.0' : '0.1');
 };
+
 adjust = function(it, v){
   if (isBlink) {
     return;
@@ -47,9 +52,11 @@ adjust = function(it, v){
   if (delay <= 0) {
     delay = 0;
   }
-  $('#timer').text(delay);
+  // 修改顯示：除以 100
+  $('#timer').text(Math.floor(delay / 100));
   return resize();
 };
+
 toggle = function(){
   isRun = !isRun;
   $('#toggle').text(isRun ? "STOP" : "RUN");
@@ -58,7 +65,7 @@ toggle = function(){
     clearInterval(handler);
     handler = null;
     soundToggle(audioEnd, false);
-    soundToggle(audioRemind, false);
+    // 移除 audioRemind 呼叫
   }
   if (stopBy) {
     latency = latency + new Date().getTime() - stopBy.getTime();
@@ -67,11 +74,12 @@ toggle = function(){
     return run();
   }
 };
+
 reset = function(){
   if (delay === 0) {
     delay = 1000;
   }
-  soundToggle(audioRemind, false);
+  // soundToggle(audioRemind, false); // 移除
   soundToggle(audioEnd, false);
   stopBy = 0;
   isWarned = false;
@@ -79,36 +87,39 @@ reset = function(){
   latency = 0;
   start = null;
   isRun = true;
+  
+  // 重置火箭
+  $('#rocket').removeClass('launching');
+
   toggle();
   if (handler) {
     clearInterval(handler);
   }
   handler = null;
-  $('#timer').text(delay);
+  
+  // 修改顯示：除以 100
+  $('#timer').text(Math.floor(delay / 100));
   $('#timer').css('color', '#fff');
   return resize();
 };
+
 blink = function(){
   isBlink = true;
   isLight = !isLight;
   return $('#timer').css('color', isLight ? '#fff' : '#f00');
 };
+
 count = function(){
   var tm, diff;
   tm = $('#timer');
   diff = start.getTime() - new Date().getTime() + delay + latency;
-  if (diff > 60000) {
-    isWarned = false;
-  }
-  if (diff < 60000 && !isWarned) {
-    isWarned = true;
-    soundToggle(audioRemind, true);
-  }
-  if (diff < 55000) {
-    soundToggle(audioRemind, false);
-  }
+  
+  // 移除原始的警告音效邏輯 (audioRemind) 以符合火箭發射的清爽感
+  
   if (diff < 0 && !isBlink) {
-    soundToggle(audioEnd, true);
+    soundToggle(audioEnd, true); // 播放發射音效
+    $('#rocket').addClass('launching'); // 觸發火箭發射動畫
+    
     isBlink = true;
     diff = 0;
     clearInterval(handler);
@@ -116,9 +127,15 @@ count = function(){
       return blink();
     }, 500);
   }
-  tm.text(diff + "");
+  
+  // 修改顯示：除以 100
+  var displayNum = Math.floor(diff / 100);
+  if (displayNum < 0) displayNum = 0;
+  tm.text(displayNum + "");
+  
   return resize();
 };
+
 run = function(){
   if (start === null) {
     start = new Date();
@@ -135,9 +152,10 @@ run = function(){
   } else {
     return handler = setInterval(function(){
       return count();
-    }, 100);
+    }, 100); // 頻率可以維持 100ms
   }
 };
+
 resize = function(){
   var tm, w, h, len;
   tm = $('#timer');
@@ -148,12 +166,18 @@ resize = function(){
   tm.css('font-size', 1.5 * w / len + "px");
   return tm.css('line-height', h + "px");
 };
+
 window.onload = function(){
-  $('#timer').text(delay);
+  // 修改顯示：除以 100
+  $('#timer').text(Math.floor(delay / 100));
   resize();
-  audioRemind = newAudio('audio/smb_warning.mp3');
-  return audioEnd = newAudio('audio/smb_mariodie.mp3');
+  
+  // 移除舊音效，使用新音效
+  // 請確保您上傳了 'audio/rocket_launch.mp3'
+  audioRemind = null; 
+  audioEnd = newAudio('audio/rocket_launch.mp3');
 };
+
 window.onresize = function(){
   return resize();
 };
